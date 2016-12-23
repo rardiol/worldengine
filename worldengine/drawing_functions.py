@@ -1062,6 +1062,13 @@ def draw_politicalmap(world, target, resize_factor=1,
 
     print(resize_factor)
 
+    ease_of_expansion = numpy.empty(((world.width * resize_factor), (world.height * resize_factor)), dtype = numpy.float_)
+    it = numpy.nditer(ease_of_expansion, flags=['multi_index'], op_flags=['writeonly'])
+    while not it.finished:
+        it[0] = nation_propagation_chance(world.biome_at((it.multi_index[0], it.multi_index[1])))
+        it.iternext()
+
+
     nation_color = (0,0,255,255)
     (startx, starty) =  world.random_land()
     control = numpy.zeros(((world.width * resize_factor), (world.height * resize_factor)), dtype = numpy.bool)
@@ -1076,8 +1083,8 @@ def draw_politicalmap(world, target, resize_factor=1,
         it = numpy.nditer(ncontrol, flags=['multi_index'], op_flags=['writeonly'])
         while not it.finished:
             it[0] = (
-                control[(it.multi_index[0]   )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or 
-                (nation_propagation_chance(world.biome_at((it.multi_index[0], it.multi_index[1]))) >= numpy.random.uniform()) and
+                control[(it.multi_index[0]   )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or
+                ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()) and
                 (
                     control[(it.multi_index[0]-1 )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or
                     control[(it.multi_index[0]+1 )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or
