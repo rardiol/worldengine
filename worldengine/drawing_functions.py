@@ -1080,8 +1080,8 @@ def draw_politicalmap(world, target, resize_factor=1,
     nations.append(Nation(0, land_color))
     control = numpy.zeros(((world.width * resize_factor), (world.height * resize_factor)), dtype = numpy.int_)
 
-    for i in range(1, number_of_nations):
-        (startx, starty) =  world.random_land()
+    for i in range(1, number_of_nations+1):
+        (startx, starty) =  world.random_land() # TODO: higher chance of starting in better terrain?
         control[startx, starty] = i;
         nations.append(Nation(i))
 
@@ -1096,15 +1096,17 @@ def draw_politicalmap(world, target, resize_factor=1,
 
             it = numpy.nditer(ncontrol, flags=['multi_index'], op_flags=['writeonly'])
             while not it.finished:
+
+                cur_pos = (it.multi_index[0], it.multi_index[1])
+                left_pos = ((cur_pos[0]-1) % world.width * resize_factor, cur_pos[1])
+                right_pos = ((cur_pos[0]+1) % world.width * resize_factor, cur_pos[1])
+                above_pos = (cur_pos[0], (cur_pos[1]-1) % world.height * resize_factor)
+                below_pos = (cur_pos[0], (cur_pos[1]+1) % world.height * resize_factor)
+
                 if not it[0]: # terra nullius
-                    if control[(it.multi_index[0]-1) % world.width * resize_factor, (it.multi_index[1]  ) % world.height * resize_factor] and ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()):
-                        it[0] = control[(it.multi_index[0]-1) % world.width * resize_factor, (it.multi_index[1]  ) % world.height * resize_factor]
-                    if control[(it.multi_index[0]+1) % world.width * resize_factor, (it.multi_index[1]  ) % world.height * resize_factor] and ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()):
-                        it[0] = control[(it.multi_index[0]+1) % world.width * resize_factor, (it.multi_index[1]  ) % world.height * resize_factor]
-                    if control[(it.multi_index[0]  ) % world.width * resize_factor, (it.multi_index[1]-1) % world.height * resize_factor] and ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()):
-                        it[0] = control[(it.multi_index[0]  ) % world.width * resize_factor, (it.multi_index[1]-1) % world.height * resize_factor]
-                    if control[(it.multi_index[0]  ) % world.width * resize_factor, (it.multi_index[1]+1) % world.height * resize_factor] and ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()):
-                        it[0] = control[(it.multi_index[0]  ) % world.width * resize_factor, (it.multi_index[1]+1) % world.height * resize_factor]
+                    for adj_pos in [left_pos, right_pos, above_pos, below_pos]:
+                        if control[adj_pos] and ((ease_of_expansion[cur_pos]) >= numpy.random.uniform()):
+                            it[0] = control[adj_pos]
                 it.iternext()
 
         control = ncontrol
