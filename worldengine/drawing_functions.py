@@ -1044,12 +1044,11 @@ def nation_propagation_chance(biome):
         raise Exception("Unknown biome: %s" % name)
 
 class Nation():
-    def __init__(self, idn, control, color=None):
+    def __init__(self, idn, color=None):
         if color is None:
             color=(numpy.random.randint(0,255),numpy.random.randint(0,255),numpy.random.randint(0,255),255)
 
         self.idn = idn
-        self.control = control
         self.color = color
 
 def draw_politicalmap(world, target, resize_factor=1,
@@ -1078,35 +1077,37 @@ def draw_politicalmap(world, target, resize_factor=1,
         it.iternext()
 
     nations = []
+    nations.append(Nation(0, land_color))
+    control = numpy.zeros(((world.width * resize_factor), (world.height * resize_factor)), dtype = numpy.int_)
 
-    for i in range(number_of_nations):
+    for i in range(1, number_of_nations):
         (startx, starty) =  world.random_land()
-        control = numpy.zeros(((world.width * resize_factor), (world.height * resize_factor)), dtype = numpy.bool)
-        control[startx, starty] = True;
-        nations.append(Nation(i, control))
+        control[startx, starty] = i;
+        nations.append(Nation(i))
 
     if verbose:
         start_time = time.time()
     for i in range(expansion_rounds):
+        ncontrol = control.copy()
         for nation in nations:
+            if(nation.idn == 0):
+                continue # don't run for terra nullius
             print("Expansion round: {:d} for nation {:d}".format(i, nation.idn))
-            ncontrol = nation.control.copy()
 
             it = numpy.nditer(ncontrol, flags=['multi_index'], op_flags=['writeonly'])
             while not it.finished:
-                it[0] = (
-                    nation.control[(it.multi_index[0]   )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or
-                    ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()) and
-                    (
-                        nation.control[(it.multi_index[0]-1 )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or
-                        nation.control[(it.multi_index[0]+1 )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or
-                        nation.control[(it.multi_index[0]   )% world.width * resize_factor, (it.multi_index[1]-1 )% world.height * resize_factor] or
-                        nation.control[(it.multi_index[0]   )% world.width * resize_factor, (it.multi_index[1]+1 )% world.height * resize_factor]
-                    )
-                )
+                if not it[0]: # terra nullius
+                    if control[(it.multi_index[0]-1) % world.width * resize_factor, (it.multi_index[1]  ) % world.height * resize_factor] and ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()):
+                        it[0] = control[(it.multi_index[0]-1) % world.width * resize_factor, (it.multi_index[1]  ) % world.height * resize_factor]
+                    if control[(it.multi_index[0]+1) % world.width * resize_factor, (it.multi_index[1]  ) % world.height * resize_factor] and ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()):
+                        it[0] = control[(it.multi_index[0]+1) % world.width * resize_factor, (it.multi_index[1]  ) % world.height * resize_factor]
+                    if control[(it.multi_index[0]  ) % world.width * resize_factor, (it.multi_index[1]-1) % world.height * resize_factor] and ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()):
+                        it[0] = control[(it.multi_index[0]  ) % world.width * resize_factor, (it.multi_index[1]-1) % world.height * resize_factor]
+                    if control[(it.multi_index[0]  ) % world.width * resize_factor, (it.multi_index[1]+1) % world.height * resize_factor] and ((ease_of_expansion[it.multi_index[0], it.multi_index[1]]) >= numpy.random.uniform()):
+                        it[0] = control[(it.multi_index[0]  ) % world.width * resize_factor, (it.multi_index[1]+1) % world.height * resize_factor]
                 it.iternext()
 
-            nation.control = ncontrol
+        control = ncontrol
     if verbose:
         elapsed_time = time.time() - start_time
         print(
@@ -1124,12 +1125,7 @@ def draw_politicalmap(world, target, resize_factor=1,
             if world.is_ocean((xf, yf)):
                 target.set_pixel(x, y, sea_color)
             else:
-                for nation in nations:
-                    if (nation.control[x, y]):
-                        target.set_pixel(x, y, nation.color)
-                        break
-                else:
-                    target.set_pixel(x, y, land_color)
+                target.set_pixel(x, y, nations[control[x, y]].color)
     if verbose:
         elapsed_time = time.time() - start_time
         print(
