@@ -807,14 +807,14 @@ def draw_ancientmap_on_file(world, filename, resize_factor=1,
                     verbose)
     img.complete()
 
-def draw_politicalmap_on_file(world, filename, resize_factor=1,
+def draw_politicalmap_on_file(world, filename, number_of_nations=5, expansion_rounds=20, resize_factor=1,
                             sea_color=(0, 0, 255, 255),
                             draw_biome=True, draw_rivers=True, draw_mountains=True, 
                             draw_outer_land_border=False, verbose=False):
     img = PNGWriter.rgba_from_dimensions(world.width * resize_factor, world.height * resize_factor, filename)
     draw_politicalmap(world, img, resize_factor, sea_color,
                     draw_biome, draw_rivers, draw_mountains, draw_outer_land_border, 
-                    verbose)
+                      verbose, number_of_nations, expansion_rounds)
     img.complete()
 
 

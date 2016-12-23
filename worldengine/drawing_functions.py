@@ -1046,7 +1046,7 @@ def nation_propagation_chance(biome):
 def draw_politicalmap(world, target, resize_factor=1,
                       sea_color=(0, 0, 255, 255),
                       draw_biome = True, draw_rivers = True, draw_mountains = True,
-                      draw_outer_land_border = False, verbose=get_verbose(), number_of_nations=1, expansion_rounds = 15):
+                      draw_outer_land_border = False, verbose=get_verbose(), number_of_nations=5, expansion_rounds = 20):
     rng = numpy.random.RandomState(world.seed)  # create our own random generator
 
     land_color = (181, 166, 127, 255)

@@ -149,10 +149,12 @@ def operation_ancient_map(world, map_filename, resize_factor, sea_color,
                             draw_outer_land_border)
     print("+ ancient map generated in '%s'" % map_filename)
 
-def operation_political_map(world, map_filename, resize_factor, sea_color,
+def operation_political_map(world, map_filename, number_of_nations,
+                          expansion_rounds, resize_factor, sea_color,
                           draw_biome, draw_rivers, draw_mountains,
                           draw_outer_land_border):
-    draw_politicalmap_on_file(world, map_filename, resize_factor, sea_color,
+    draw_politicalmap_on_file(world, map_filename, number_of_nations,
+                            expansion_rounds, resize_factor, sea_color,
                             draw_biome, draw_rivers, draw_mountains,
                             draw_outer_land_border)
     print("+ political map generated in '%s'" % map_filename)
@@ -373,6 +375,16 @@ def main():
                                help="Draw outer land border",
                                default=False)
     # TODO: allow for RGB specification as [r g b], ie [0.5 0.5 0.5] for gray
+    # -----------------------------------------------------
+    g_political_map = parser.add_argument_group(
+        "Political Map Options", "These options are only useful in " +
+        "political_map mode")
+    g_political_map.add_argument('-nn', '--number_of_nations', dest='number_of_nations', type=int,
+                        help="Number of nations to be generated",
+                        metavar="NN", default='5')
+    g_political_map.add_argument('-er', '--expansion_rounds', dest='expansion_rounds', type=int,
+                        help="Number of rounds of expansion for nations",
+                        metavar="ER", default='20')
 
     # -----------------------------------------------------
     export_options = parser.add_argument_group(
@@ -619,9 +631,10 @@ def main():
         if not args.generated_file:
             args.generated_file = "political_map_%s.png" % world.name
         operation_political_map(world, args.generated_file,
-                              args.resize_factor, sea_color,
-                              args.draw_biome, args.draw_rivers,
-                              args.draw_mountains, args.draw_outer_border)
+                                args.number_of_nations, args.expansion_rounds,
+                                args.resize_factor, sea_color,
+                                args.draw_biome, args.draw_rivers,
+                                args.draw_mountains, args.draw_outer_border)
     elif operation == 'info':
         world = load_world(args.FILE)
         print_world_info(world)
