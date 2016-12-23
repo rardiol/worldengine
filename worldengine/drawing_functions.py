@@ -5,6 +5,7 @@ Jython
 """
 
 import numpy
+import numpy.random
 import sys
 import time
 from worldengine.common import get_verbose
@@ -910,3 +911,206 @@ def draw_ancientmap(world, target, resize_factor=1,
             print(
                 "...drawing_functions.draw_oldmap_on_pixel: draw mountains " +
                 "Elapsed time " + str(elapsed_time) + " seconds.")
+
+
+
+def nation_propagation_chance(biome):
+    name = biome.name()
+
+    if name == "ocean":
+        return 0.15
+
+    if name == "sea":
+        return 0.3
+
+    if name == "polar desert":
+        return 0.01
+
+    if name == "ice":
+        return 0.01
+
+    if name == "subpolar dry tundra":
+        return 0.1
+
+    if name == "subpolar moist tundra":
+        return 0.1
+
+    if name == "subpolar wet tundra":
+        return 0.1
+
+    if name == "subpolar rain tundra":
+        return 0.1
+
+    if name == "boreal desert":
+        return 0.2
+
+    if name == "boreal dry scrub":
+        return 0.4
+
+    if name == "boreal moist forest":
+        return 0.5
+
+    if name == "boreal wet forest":
+        return 0.5
+
+    if name == "boreal rain forest":
+        return 0.5
+
+    if name == "cool temperate desert":
+        return 0.2
+
+    if name == "cool temperate desert scrub":
+        return 0.2
+
+    if name == "cool temperate steppe":
+        return 0.3
+
+    if name == "cool temperate moist forest":
+        return 0.6
+
+    if name == "cool temperate wet forest":
+        return 0.6
+
+    if name == "cool temperate rain forest":
+        return 0.6
+
+    if name == "warm temperate desert":
+        return 0.2
+
+    if name == "warm temperate desert scrub":
+        return 0.25
+
+    if name == "warm temperate thorn scrub":
+        return 0.25
+
+    if name == "warm temperate dry forest":
+        return 0.2
+
+    if name == "warm temperate moist forest":
+        return 0.6
+
+    if name == "warm temperate wet forest":
+        return 0.6
+
+    if name == "warm temperate rain forest":
+        return 0.6
+
+    if name == "subtropical desert":
+        return 0.2
+
+    if name == "subtropical desert scrub":
+        return 0.2
+
+    if name == "subtropical thorn woodland":
+        return 0.5
+
+    if name == "subtropical dry forest":
+        return 0.4
+
+    if name == "subtropical moist forest":
+        return 0.4
+
+    if name == "subtropical wet forest":
+        return 0.4
+
+    if name == "subtropical rain forest":
+        return 0.4
+
+    if name == "tropical desert":
+        return 0.2
+
+    if name == "tropical desert scrub":
+        return 0.2
+
+    if name == "tropical thorn woodland":
+        return 0.5
+
+    if name == "tropical very dry forest":
+        return 0.4
+
+    if name == "tropical dry forest":
+        return 0.4
+
+    if name == "tropical moist forest":
+        return 0.4
+
+    if name == "tropical wet forest":
+        return 0.4
+
+    if name == "tropical rain forest":
+        return 0.4
+
+    else:
+        raise Exception("Unknown biome: %s" % name)
+
+def draw_politicalmap(world, target, resize_factor=1,
+                      sea_color=(0, 0, 255, 255),
+                      draw_biome = True, draw_rivers = True, draw_mountains = True,
+                      draw_outer_land_border = False, verbose=get_verbose(), number_of_nations=1, expansion_rounds = 15):
+    rng = numpy.random.RandomState(world.seed)  # create our own random generator
+
+    land_color = (181, 166, 127, 255)
+
+    borders = _find_land_borders(world, resize_factor)
+
+    if draw_outer_land_border:
+        outer_borders = _find_outer_borders(world, resize_factor, borders)
+        outer_borders = _find_outer_borders(world, resize_factor, outer_borders)
+
+    border_color = (0, 0, 0, 255)
+    outer_border_color = gradient(0.5, 0, 1.0, rgba_to_rgb(border_color), rgba_to_rgb(sea_color))
+
+    print(resize_factor)
+
+    nation_color = (0,0,255,255)
+    (startx, starty) =  world.random_land()
+    control = numpy.zeros(((world.width * resize_factor), (world.height * resize_factor)), dtype = numpy.bool)
+    control[startx, starty] = True;
+
+    if verbose:
+        start_time = time.time()
+    for i in range(expansion_rounds):
+        print(i)
+        ncontrol = control.copy()
+
+        it = numpy.nditer(ncontrol, flags=['multi_index'], op_flags=['writeonly'])
+        while not it.finished:
+            it[0] = (
+                control[(it.multi_index[0]   )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or 
+                (nation_propagation_chance(world.biome_at((it.multi_index[0], it.multi_index[1]))) >= numpy.random.uniform()) and
+                (
+                    control[(it.multi_index[0]-1 )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or
+                    control[(it.multi_index[0]+1 )% world.width * resize_factor, (it.multi_index[1]   )% world.height * resize_factor] or
+                    control[(it.multi_index[0]   )% world.width * resize_factor, (it.multi_index[1]-1 )% world.height * resize_factor] or
+                    control[(it.multi_index[0]   )% world.width * resize_factor, (it.multi_index[1]+1 )% world.height * resize_factor]
+                )
+            )
+            it.iternext()
+
+        control = ncontrol
+    if verbose:
+        elapsed_time = time.time() - start_time
+        print(
+            "...drawing_functions.expansion: " +
+            "Elapsed time " + str(elapsed_time) + " seconds.")
+
+    for y in range(resize_factor * world.height):
+        for x in range(resize_factor * world.width):
+            xf = int(x / resize_factor)
+            yf = int(y / resize_factor)
+            #if borders[y, x]:
+            #    target.set_pixel(x, y, border_color)
+            #elif draw_outer_land_border and outer_borders[y, x]:
+            #   target.set_pixel(x, y, outer_border_color)
+            if world.is_ocean((xf, yf)):
+                target.set_pixel(x, y, sea_color)
+            else:
+                if (control[x, y]):
+                    target.set_pixel(x, y, nation_color)
+                else:
+                    target.set_pixel(x, y, land_color)
+    if verbose:
+        elapsed_time = time.time() - start_time
+        print(
+            "...drawing_functions.draw_oldmap_on_pixel: color ocean " +
+            "Elapsed time " + str(elapsed_time) + " seconds.")

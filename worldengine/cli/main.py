@@ -5,7 +5,7 @@ import numpy
 
 import worldengine.generation as geo
 from worldengine.common import set_verbose, print_verbose
-from worldengine.draw import draw_ancientmap_on_file, draw_biome_on_file, draw_ocean_on_file, \
+from worldengine.draw import draw_politicalmap_on_file, draw_ancientmap_on_file, draw_biome_on_file, draw_ocean_on_file, \
     draw_precipitation_on_file, draw_grayscale_heightmap_on_file, draw_simple_elevation_on_file, \
     draw_temperature_levels_on_file, draw_riversmap_on_file, draw_scatter_plot_on_file, \
     draw_satellite_on_file, draw_icecaps_on_file
@@ -23,7 +23,7 @@ except:
 
 VERSION = __version__
 
-OPERATIONS = 'world|plates|ancient_map|info|export'
+OPERATIONS = 'world|plates|ancient_map|political_map|info|export'
 SEA_COLORS = 'blue|brown'
 STEPS = 'plates|precipitations|full'
 
@@ -148,6 +148,14 @@ def operation_ancient_map(world, map_filename, resize_factor, sea_color,
                             draw_biome, draw_rivers, draw_mountains,
                             draw_outer_land_border)
     print("+ ancient map generated in '%s'" % map_filename)
+
+def operation_political_map(world, map_filename, resize_factor, sea_color,
+                          draw_biome, draw_rivers, draw_mountains,
+                          draw_outer_land_border):
+    draw_politicalmap_on_file(world, map_filename, resize_factor, sea_color,
+                            draw_biome, draw_rivers, draw_mountains,
+                            draw_outer_land_border)
+    print("+ political map generated in '%s'" % map_filename)
 
 
 def __get_last_byte__(filename):
@@ -587,6 +595,30 @@ def main():
         if not args.generated_file:
             args.generated_file = "ancient_map_%s.png" % world.name
         operation_ancient_map(world, args.generated_file,
+                              args.resize_factor, sea_color,
+                              args.draw_biome, args.draw_rivers,
+                              args.draw_mountains, args.draw_outer_border)
+    elif operation == 'political_map':
+        print('')  # empty line
+        print('starting (it could take a few minutes) ...')
+        if args.sea_color == "blue":
+            sea_color = (142, 162, 179, 255)
+        elif args.sea_color == "brown":
+            sea_color = (212, 198, 169, 255)
+        else:
+            usage("Unknown sea color: " + args.sea_color +
+                  " Select from [" + SEA_COLORS + "]")
+        if not args.world_file:
+            usage(
+                "For generating an political map is necessary to specify the " +
+                "world to be used (-w option)")
+        world = load_world(args.world_file)
+
+        print_verbose(" * world loaded")
+
+        if not args.generated_file:
+            args.generated_file = "political_map_%s.png" % world.name
+        operation_political_map(world, args.generated_file,
                               args.resize_factor, sea_color,
                               args.draw_biome, args.draw_rivers,
                               args.draw_mountains, args.draw_outer_border)
